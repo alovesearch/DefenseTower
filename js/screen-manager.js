@@ -48,12 +48,13 @@ class ScreenManager {
      * @param {string} screenId - ID экрана для переключения
      * @param {Object} data - Данные для передачи экрану
      * @param {boolean} addToHistory - Добавить в историю
+     * @param {boolean} isModal - Является ли экран модальным
      */
-    async switchTo(screenId, data = {}, addToHistory = true) {
+    async switchTo(screenId, data = {}, addToHistory = true, isModal = false) {
         if (this.isTransitioning) {
             console.warn('Transition already in progress, queuing transition to:', screenId);
             // Добавляем переход в очередь
-            setTimeout(() => this.switchTo(screenId, data, addToHistory), 100);
+            setTimeout(() => this.switchTo(screenId, data, addToHistory, isModal), 100);
             return;
         }
         
@@ -65,22 +66,25 @@ class ScreenManager {
         this.isTransitioning = true;
         
         try {
-            // Сохраняем предыдущий экран
-            if (this.currentScreen && addToHistory) {
-                this.previousScreen = this.currentScreen;
-                this.screenHistory.push(this.currentScreen);
-            }
-            
-            // Деактивируем текущий экран
-            if (this.currentScreen) {
-                await this.deactivateScreen(this.currentScreen);
+            // Для модальных экранов не деактивируем текущий экран
+            if (!isModal) {
+                // Сохраняем предыдущий экран
+                if (this.currentScreen && addToHistory) {
+                    this.previousScreen = this.currentScreen;
+                    this.screenHistory.push(this.currentScreen);
+                }
+                
+                // Деактивируем текущий экран
+                if (this.currentScreen) {
+                    await this.deactivateScreen(this.currentScreen);
+                }
             }
             
             // Активируем новый экран
             this.currentScreen = screenId;
             await this.activateScreen(screenId, data);
             
-            console.log(`Switched to screen: ${screenId}`);
+            console.log(`Switched to screen: ${screenId}${isModal ? ' (modal)' : ''}`);
             
         } catch (error) {
             console.error('Error switching screen:', error);
@@ -96,6 +100,16 @@ class ScreenManager {
         if (this.screenHistory.length > 0) {
             const previousScreen = this.screenHistory.pop();
             await this.switchTo(previousScreen, {}, false);
+        }
+    }
+    
+    /**
+     * Закрывает модальный экран
+     */
+    async closeModal() {
+        if (this.currentScreen) {
+            await this.deactivateScreen(this.currentScreen);
+            this.currentScreen = null;
         }
     }
     

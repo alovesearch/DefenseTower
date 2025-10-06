@@ -10,6 +10,13 @@ class LevelScreenController {
         this.speedBtn = document.getElementById('speed-btn');
         this.startWaveBtn = document.getElementById('start-wave-btn');
         this.waveTitle = document.querySelector('.wave-title');
+        this.settingsBtn = document.getElementById('settings-btn-level');
+        this.backToMapBtn = document.getElementById('back-to-map-btn');
+        this.towerPanel = document.getElementById('tower-panel');
+        this.closeTowerPanelBtn = document.getElementById('close-tower-panel');
+        this.coinsDisplay = document.getElementById('coins-display');
+        this.expDisplay = document.getElementById('exp-display');
+        this.enemyCountDisplay = document.getElementById('enemy-count');
         
         this.levelData = null;
         this.hero = null;
@@ -21,9 +28,13 @@ class LevelScreenController {
         this.selectedHero = false;
         this.targetPosition = null;
         this.availableMoves = [];
+        this.selectedTowerType = null;
+        this.towerPlacementIndicator = null;
+        this.isPlacingTower = false;
         
         this.bindEvents();
         this.setupCanvas();
+        this.createTowerPlacementIndicator();
     }
     
     /**
@@ -32,9 +43,11 @@ class LevelScreenController {
      */
     async load(data = {}) {
         console.log('Level screen loaded');
-        this.levelData = data.levelData || this.getDefaultLevelData();
+        this.levelData = data.levelData || await this.getDefaultLevelData();
+        this.faction = data.faction || 'light';
         this.initializeLevel();
         this.setupSystems();
+        this.updateUI();
     }
     
     /**
@@ -44,6 +57,7 @@ class LevelScreenController {
     async activate(data = {}) {
         console.log('Level screen activated');
         this.startGameLoop();
+        this.autoStartFirstWave();
     }
     
     /**
@@ -88,47 +102,67 @@ class LevelScreenController {
         this.pauseBtn.addEventListener('click', () => this.togglePause());
         this.speedBtn.addEventListener('click', () => this.toggleSpeed());
         this.startWaveBtn.addEventListener('click', () => this.startWave());
+        this.settingsBtn.addEventListener('click', () => this.openSettings());
+        this.backToMapBtn.addEventListener('click', () => this.backToMap());
         
-        // События мыши для управления героем
+        // Панель башен
+        this.closeTowerPanelBtn.addEventListener('click', () => this.closeTowerPanel());
+        document.querySelectorAll('.tower-item').forEach(item => {
+            item.addEventListener('click', () => this.selectTowerType(item.dataset.tower));
+        });
+        
+        // События мыши для управления героем и башнями
         this.canvas.addEventListener('click', (e) => this.onCanvasClick(e));
         this.canvas.addEventListener('mousemove', (e) => this.onCanvasMouseMove(e));
+        this.canvas.addEventListener('contextmenu', (e) => this.onCanvasRightClick(e));
         
         // События касания для мобильных устройств
         this.canvas.addEventListener('touchstart', (e) => this.onCanvasTouchStart(e));
         this.canvas.addEventListener('touchend', (e) => this.onCanvasTouchEnd(e));
+        
+        // Клавиатурные события
+        document.addEventListener('keydown', (e) => this.onKeyDown(e));
     }
     
     /**
      * Получает данные уровня по умолчанию
      */
-    getDefaultLevelData() {
-        return {
-            id: 1,
-            name: "Первый уровень",
-            width: 1200,
-            height: 800,
-            heroStartPos: { x: 100, y: 400 },
-            attackPoint: { x: 1100, y: 400 },
-            defensePoint: { x: 50, y: 400 },
-            roads: [
-                { start: { x: 1100, y: 400 }, end: { x: 1000, y: 400 } },
-                { start: { x: 1000, y: 400 }, end: { x: 800, y: 300 } },
-                { start: { x: 800, y: 300 }, end: { x: 600, y: 400 } },
-                { start: { x: 600, y: 400 }, end: { x: 400, y: 500 } },
-                { start: { x: 400, y: 500 }, end: { x: 200, y: 400 } },
-                { start: { x: 200, y: 400 }, end: { x: 50, y: 400 } }
-            ],
-            towerPositions: [
-                { x: 900, y: 350, available: true },
-                { x: 700, y: 250, available: true },
-                { x: 500, y: 350, available: true },
-                { x: 300, y: 450, available: true }
-            ],
-            obstacles: [
-                { x: 500, y: 200, width: 100, height: 100 },
-                { x: 300, y: 600, width: 80, height: 80 }
-            ]
-        };
+    async getDefaultLevelData() {
+        try {
+            const response = await fetch('data/levels.json');
+            const data = await response.json();
+            return data.levels[0]; // Возвращаем первый уровень
+        } catch (error) {
+            console.error('Failed to load level data:', error);
+            // Возвращаем данные по умолчанию
+            return {
+                id: 1,
+                name: "Первый уровень",
+                width: 1200,
+                height: 800,
+                heroStartPos: { x: 100, y: 400 },
+                attackPoint: { x: 1100, y: 400 },
+                defensePoint: { x: 50, y: 400 },
+                roads: [
+                    { start: { x: 1100, y: 400 }, end: { x: 1000, y: 400 } },
+                    { start: { x: 1000, y: 400 }, end: { x: 800, y: 300 } },
+                    { start: { x: 800, y: 300 }, end: { x: 600, y: 400 } },
+                    { start: { x: 600, y: 400 }, end: { x: 400, y: 500 } },
+                    { start: { x: 400, y: 500 }, end: { x: 200, y: 400 } },
+                    { start: { x: 200, y: 400 }, end: { x: 50, y: 400 } }
+                ],
+                towerPositions: [
+                    { x: 900, y: 350, available: true },
+                    { x: 700, y: 250, available: true },
+                    { x: 500, y: 350, available: true },
+                    { x: 300, y: 450, available: true }
+                ],
+                obstacles: [
+                    { x: 500, y: 200, width: 100, height: 100 },
+                    { x: 300, y: 600, width: 80, height: 80 }
+                ]
+            };
+        }
     }
     
     /**
@@ -198,13 +232,21 @@ class LevelScreenController {
             {
                 name: "Волна 1",
                 enemies: [
-                    { type: "goblin", count: 10, delay: 1000 }
+                    { type: "goblin", count: 5, delay: 1000 }
                 ]
             },
             {
                 name: "Волна 2", 
                 enemies: [
+                    { type: "goblin", count: 3, delay: 1000 },
                     { type: "orc", count: 2, delay: 2000 }
+                ]
+            },
+            {
+                name: "Волна 3",
+                enemies: [
+                    { type: "goblin", count: 5, delay: 800 },
+                    { type: "skeleton_archer", count: 3, delay: 1500 }
                 ]
             },
             {
@@ -250,6 +292,17 @@ class LevelScreenController {
     }
     
     /**
+     * Автоматически начинает первую волну через 3 секунды
+     */
+    autoStartFirstWave() {
+        setTimeout(() => {
+            if (!waveManager.isWaveActive()) {
+                this.startWave();
+            }
+        }, 3000);
+    }
+    
+    /**
      * Начинает игровой цикл
      */
     startGameLoop() {
@@ -292,6 +345,9 @@ class LevelScreenController {
         
         // Обновляем противников
         this.updateEnemies();
+        
+        // Обновляем UI
+        this.updateUI();
     }
     
     /**
@@ -358,8 +414,20 @@ class LevelScreenController {
      * Рендерит фон
      */
     renderBackground() {
-        this.ctx.fillStyle = '#2c3e50';
+        // Создаем градиентный фон
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, '#2c3e50');
+        gradient.addColorStop(1, '#34495e');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Добавляем текстуру
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+        for (let i = 0; i < 100; i++) {
+            const x = Math.random() * this.canvas.width;
+            const y = Math.random() * this.canvas.height;
+            this.ctx.fillRect(x, y, 2, 2);
+        }
     }
     
     /**
@@ -367,7 +435,20 @@ class LevelScreenController {
      */
     renderRoads() {
         this.ctx.strokeStyle = '#95a5a6';
-        this.ctx.lineWidth = 8;
+        this.ctx.lineWidth = 12;
+        this.ctx.setLineDash([]);
+        
+        // Рендерим основную дорогу
+        this.roads.forEach(road => {
+            this.ctx.beginPath();
+            this.ctx.moveTo(road.start.x, road.start.y);
+            this.ctx.lineTo(road.end.x, road.end.y);
+            this.ctx.stroke();
+        });
+        
+        // Добавляем центральную линию
+        this.ctx.strokeStyle = '#ecf0f1';
+        this.ctx.lineWidth = 2;
         this.ctx.setLineDash([10, 5]);
         
         this.roads.forEach(road => {
@@ -384,9 +465,26 @@ class LevelScreenController {
      * Рендерит препятствия
      */
     renderObstacles() {
-        this.ctx.fillStyle = '#7f8c8d';
         this.obstacles.forEach(obstacle => {
+            // Рендерим тень
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.fillRect(obstacle.x + 2, obstacle.y + 2, obstacle.width, obstacle.height);
+            
+            // Рендерим основное препятствие
+            this.ctx.fillStyle = '#7f8c8d';
             this.ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            
+            // Рендерим границу
+            this.ctx.strokeStyle = '#5d6d7e';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            
+            // Рендерим иконку
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '16px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('🗿', obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2);
         });
     }
     
@@ -394,16 +492,40 @@ class LevelScreenController {
      * Рендерит позиции башен
      */
     renderTowerPositions() {
-        this.ctx.fillStyle = '#e74c3c';
         this.towerPositions.forEach(pos => {
             if (pos.available && !pos.hasTower) {
+                // Рендерим тень
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
                 this.ctx.beginPath();
-                this.ctx.arc(pos.x, pos.y, 15, 0, Math.PI * 2);
+                this.ctx.arc(pos.x + 1, pos.y + 1, 18, 0, Math.PI * 2);
                 this.ctx.fill();
                 
+                // Рендерим основную позицию
+                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.beginPath();
+                this.ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Рендерим границу
                 this.ctx.strokeStyle = '#c0392b';
                 this.ctx.lineWidth = 2;
                 this.ctx.stroke();
+                
+                // Рендерим иконку
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '14px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('🏗️', pos.x, pos.y);
+                
+                // Рендерим пульсирующий эффект
+                const pulse = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+                this.ctx.globalAlpha = pulse * 0.5;
+                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.beginPath();
+                this.ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.globalAlpha = 1;
             }
         });
     }
@@ -423,6 +545,12 @@ class LevelScreenController {
      * @param {Object} tower - Башня
      */
     renderTower(tower) {
+        // Рендерим тень
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.beginPath();
+        this.ctx.arc(tower.x + 2, tower.y + 2, tower.size, 0, Math.PI * 2);
+        this.ctx.fill();
+        
         // Рендерим основание башни
         this.ctx.fillStyle = tower.color;
         this.ctx.beginPath();
@@ -431,7 +559,7 @@ class LevelScreenController {
         
         // Рендерим границу
         this.ctx.strokeStyle = '#fff';
-        this.ctx.lineWidth = 2;
+        this.ctx.lineWidth = 3;
         this.ctx.stroke();
         
         // Рендерим иконку
@@ -443,7 +571,7 @@ class LevelScreenController {
         
         // Рендерим уровень
         this.ctx.fillStyle = '#000';
-        this.ctx.font = '12px Arial';
+        this.ctx.font = 'bold 12px Arial';
         this.ctx.fillText(tower.level.toString(), tower.x, tower.y + 20);
         
         // Рендерим радиус атаки при наведении
@@ -473,6 +601,12 @@ class LevelScreenController {
      * @param {Object} enemy - Противник
      */
     renderEnemy(enemy) {
+        // Рендерим тень
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.beginPath();
+        this.ctx.arc(enemy.x + 1, enemy.y + 1, enemy.size, 0, Math.PI * 2);
+        this.ctx.fill();
+        
         // Рендерим тело противника
         this.ctx.fillStyle = enemy.color;
         this.ctx.beginPath();
@@ -522,15 +656,20 @@ class LevelScreenController {
         const text = `${boss.name} - ${boss.health}/${boss.maxHealth}`;
         const textWidth = this.ctx.measureText(text).width;
         const textX = boss.x - textWidth / 2;
-        const textY = boss.y - boss.size - 20;
+        const textY = boss.y - boss.size - 25;
         
         // Фон облака
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(textX - 5, textY - 15, textWidth + 10, 20);
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        this.ctx.fillRect(textX - 8, textY - 18, textWidth + 16, 24);
+        
+        // Граница облака
+        this.ctx.strokeStyle = '#e74c3c';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(textX - 8, textY - 18, textWidth + 16, 24);
         
         // Текст
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = '12px Arial';
+        this.ctx.font = 'bold 12px Arial';
         this.ctx.fillText(text, textX, textY);
     }
     
@@ -549,19 +688,29 @@ class LevelScreenController {
     renderAvailableMoves() {
         if (this.availableMoves.length > 0) {
             this.availableMoves.forEach(move => {
-                this.ctx.fillStyle = move.available ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)';
+                // Пульсация
+                const pulse = Math.sin(Date.now() * 0.01) * 0.2 + 0.8;
+                
+                // Внешний круг
+                this.ctx.globalAlpha = pulse * 0.3;
+                this.ctx.fillStyle = move.available ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)';
+                this.ctx.beginPath();
+                this.ctx.arc(move.x, move.y, 35, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Внутренний круг
+                this.ctx.globalAlpha = pulse * 0.6;
+                this.ctx.fillStyle = move.available ? 'rgba(0, 255, 0, 0.4)' : 'rgba(255, 0, 0, 0.4)';
                 this.ctx.beginPath();
                 this.ctx.arc(move.x, move.y, 25, 0, Math.PI * 2);
                 this.ctx.fill();
                 
-                // Пульсация
-                const pulse = Math.sin(Date.now() * 0.01) * 0.2 + 0.8;
-                this.ctx.globalAlpha = pulse;
-                this.ctx.fillStyle = move.available ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)';
-                this.ctx.beginPath();
-                this.ctx.arc(move.x, move.y, 35, 0, Math.PI * 2);
-                this.ctx.fill();
+                // Центральная точка
                 this.ctx.globalAlpha = 1;
+                this.ctx.fillStyle = move.available ? '#00ff00' : '#ff0000';
+                this.ctx.beginPath();
+                this.ctx.arc(move.x, move.y, 5, 0, Math.PI * 2);
+                this.ctx.fill();
             });
         }
     }
@@ -572,19 +721,57 @@ class LevelScreenController {
     renderHero() {
         if (!this.hero) return;
         
-        // Рендерим треугольник героя
+        // Рендерим тень
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.beginPath();
+        this.ctx.arc(this.hero.x + 2, this.hero.y + 2, this.hero.size, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Рендерим основное тело героя
         this.ctx.fillStyle = this.hero.color;
         this.ctx.beginPath();
-        this.ctx.moveTo(this.hero.x, this.hero.y - this.hero.size);
-        this.ctx.lineTo(this.hero.x - this.hero.size, this.hero.y + this.hero.size);
-        this.ctx.lineTo(this.hero.x + this.hero.size, this.hero.y + this.hero.size);
-        this.ctx.closePath();
+        this.ctx.arc(this.hero.x, this.hero.y, this.hero.size, 0, Math.PI * 2);
         this.ctx.fill();
         
         // Рендерим границу
         this.ctx.strokeStyle = '#fff';
-        this.ctx.lineWidth = 2;
+        this.ctx.lineWidth = 3;
         this.ctx.stroke();
+        
+        // Рендерим иконку героя
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '16px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('⚔️', this.hero.x, this.hero.y);
+        
+        // Рендерим полоску здоровья
+        if (this.hero.health < this.hero.maxHealth) {
+            const barWidth = this.hero.size * 2;
+            const barHeight = 4;
+            const barX = this.hero.x - barWidth / 2;
+            const barY = this.hero.y - this.hero.size - 8;
+            
+            // Фон полоски
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // Здоровье
+            const healthPercent = this.hero.health / this.hero.maxHealth;
+            this.ctx.fillStyle = '#00ff00';
+            this.ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+        }
+        
+        // Рендерим эффект выбора
+        if (this.selectedHero) {
+            this.ctx.strokeStyle = '#f39c12';
+            this.ctx.lineWidth = 2;
+            this.ctx.setLineDash([5, 5]);
+            this.ctx.beginPath();
+            this.ctx.arc(this.hero.x, this.hero.y, this.hero.size + 5, 0, Math.PI * 2);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+        }
     }
     
     /**
@@ -594,14 +781,38 @@ class LevelScreenController {
         // Точка атаки
         this.ctx.fillStyle = '#e74c3c';
         this.ctx.beginPath();
-        this.ctx.arc(this.levelData.attackPoint.x, this.levelData.attackPoint.y, 20, 0, Math.PI * 2);
+        this.ctx.arc(this.levelData.attackPoint.x, this.levelData.attackPoint.y, 25, 0, Math.PI * 2);
         this.ctx.fill();
+        
+        // Граница точки атаки
+        this.ctx.strokeStyle = '#c0392b';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+        
+        // Иконка атаки
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '20px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('⚔️', this.levelData.attackPoint.x, this.levelData.attackPoint.y);
         
         // Точка защиты
         this.ctx.fillStyle = '#27ae60';
         this.ctx.beginPath();
-        this.ctx.arc(this.levelData.defensePoint.x, this.levelData.defensePoint.y, 20, 0, Math.PI * 2);
+        this.ctx.arc(this.levelData.defensePoint.x, this.levelData.defensePoint.y, 25, 0, Math.PI * 2);
         this.ctx.fill();
+        
+        // Граница точки защиты
+        this.ctx.strokeStyle = '#229954';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+        
+        // Иконка защиты
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '20px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('🛡️', this.levelData.defensePoint.x, this.levelData.defensePoint.y);
     }
     
     /**
@@ -657,6 +868,12 @@ class LevelScreenController {
      * @param {number} y - Y координата
      */
     handleClick(x, y) {
+        // Если размещаем башню
+        if (this.isPlacingTower) {
+            this.placeTower(x, y);
+            return;
+        }
+        
         // Проверяем, кликнули ли по герою
         if (this.isPointInHero(x, y)) {
             this.selectHero();
@@ -678,6 +895,11 @@ class LevelScreenController {
      * @param {number} y - Y координата
      */
     handleMouseMove(x, y) {
+        // Обновляем индикатор размещения башни
+        if (this.isPlacingTower) {
+            this.updateTowerPlacementIndicator(x, y);
+        }
+        
         // Обновляем доступные ходы при движении мыши
         if (this.selectedHero) {
             this.updateAvailableMoves(x, y);
@@ -905,10 +1127,16 @@ class LevelScreenController {
         // Обновляем UI
         this.updateWaveUI();
         
-        // Автоматически начинаем следующую волну через 3 секунды
-        setTimeout(() => {
-            waveManager.startNextWave();
-        }, 3000);
+        // Автоматически начинаем следующую волну через 3 секунды, если не все волны завершены
+        if (waveIndex + 1 < waveManager.getMaxWaves()) {
+            setTimeout(() => {
+                this.startWave();
+            }, 3000);
+        } else {
+            console.log('All waves completed!');
+            this.startWaveBtn.disabled = true;
+            this.startWaveBtn.textContent = 'Все волны завершены';
+        }
     }
     
     /**
@@ -1057,7 +1285,7 @@ class LevelScreenController {
                 this.startWaveBtn.textContent = 'Все волны завершены';
             } else {
                 this.startWaveBtn.disabled = false;
-                this.startWaveBtn.textContent = 'Начать волну';
+                this.startWaveBtn.textContent = `Начать волну ${waveManager.getCurrentWave() + 1}`;
             }
         }
     }
@@ -1069,7 +1297,195 @@ class LevelScreenController {
         console.log('Game Over');
         // Здесь можно добавить экран поражения
     }
-}
+    
+    /**
+     * Создает индикатор размещения башни
+     */
+    createTowerPlacementIndicator() {
+        this.towerPlacementIndicator = document.createElement('div');
+        this.towerPlacementIndicator.className = 'tower-placement-indicator';
+        this.towerPlacementIndicator.style.display = 'none';
+        document.body.appendChild(this.towerPlacementIndicator);
+    }
+    
+    /**
+     * Открывает настройки
+     */
+    openSettings() {
+        screenManager.switchTo('settings-screen', {}, true, true);
+    }
+    
+    /**
+     * Возвращается к карте
+     */
+    backToMap() {
+        screenManager.switchTo('map-screen', { faction: this.faction });
+    }
+    
+    /**
+     * Открывает панель башен
+     */
+    openTowerPanel() {
+        this.towerPanel.style.display = 'block';
+    }
+    
+    /**
+     * Закрывает панель башен
+     */
+    closeTowerPanel() {
+        this.towerPanel.style.display = 'none';
+        this.cancelTowerPlacement();
+    }
+    
+    /**
+     * Выбирает тип башни
+     * @param {string} towerType - Тип башни
+     */
+    selectTowerType(towerType) {
+        this.selectedTowerType = towerType;
+        this.isPlacingTower = true;
+        
+        // Обновляем визуальное выделение
+        document.querySelectorAll('.tower-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        document.querySelector(`[data-tower="${towerType}"]`).classList.add('selected');
+        
+        // Показываем индикатор размещения
+        this.towerPlacementIndicator.style.display = 'block';
+        
+        console.log(`Selected tower type: ${towerType}`);
+    }
+    
+    /**
+     * Отменяет размещение башни
+     */
+    cancelTowerPlacement() {
+        this.selectedTowerType = null;
+        this.isPlacingTower = false;
+        this.towerPlacementIndicator.style.display = 'none';
+        
+        // Убираем выделение
+        document.querySelectorAll('.tower-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+    }
+    
+    /**
+     * Обработчик правого клика
+     * @param {MouseEvent} e - Событие мыши
+     */
+    onCanvasRightClick(e) {
+        e.preventDefault();
+        this.cancelTowerPlacement();
+    }
+    
+    /**
+     * Обработчик нажатия клавиш
+     * @param {KeyboardEvent} e - Событие клавиатуры
+     */
+    onKeyDown(e) {
+        switch(e.key) {
+            case 'Escape':
+                this.cancelTowerPlacement();
+                break;
+            case 't':
+            case 'T':
+                this.openTowerPanel();
+                break;
+            case ' ':
+                e.preventDefault();
+                this.togglePause();
+                break;
+        }
+    }
+    
+    /**
+     * Обновляет UI
+     */
+    updateUI() {
+        // Обновляем информацию о герое
+        if (this.hero) {
+            const heroHealth = this.levelElement.querySelector('.hero-health');
+            const heroMana = this.levelElement.querySelector('.hero-mana');
+            const heroLevel = this.levelElement.querySelector('.hero-level');
+            
+            if (heroHealth) {
+                heroHealth.textContent = `❤️ ${this.hero.health}/${this.hero.maxHealth}`;
+            }
+            
+            if (heroMana) {
+                heroMana.textContent = `💙 ${economyManager.getCoins()}`;
+            }
+            
+            if (heroLevel) {
+                heroLevel.textContent = `⭐ ${this.hero.level}`;
+            }
+        }
+        
+        // Обновляем экономическую информацию
+        if (this.coinsDisplay) {
+            this.coinsDisplay.textContent = economyManager.getCoins();
+        }
+        
+        if (this.expDisplay) {
+            this.expDisplay.textContent = economyManager.getExperience();
+        }
+        
+        // Обновляем количество врагов
+        if (this.enemyCountDisplay) {
+            const enemyCount = waveManager.getAliveEnemies().length;
+            this.enemyCountDisplay.textContent = enemyCount;
+        }
+        
+        this.updateWaveUI();
+    }
+    
+    /**
+     * Обновляет индикатор размещения башни
+     * @param {number} x - X координата
+     * @param {number} y - Y координата
+     */
+    updateTowerPlacementIndicator(x, y) {
+        if (!this.isPlacingTower || !this.towerPlacementIndicator) return;
+        
+        this.towerPlacementIndicator.style.left = (x - 15) + 'px';
+        this.towerPlacementIndicator.style.top = (y - 15) + 'px';
+        
+        // Проверяем, можно ли разместить башню
+        const canPlace = this.canPlaceTower(x, y);
+        this.towerPlacementIndicator.className = `tower-placement-indicator ${canPlace ? 'valid' : 'invalid'}`;
+    }
+    
+    /**
+     * Проверяет, можно ли разместить башню
+     * @param {number} x - X координата
+     * @param {number} y - Y координата
+     */
+    canPlaceTower(x, y) {
+        // Проверяем, есть ли свободная позиция
+        const position = towerManager.getTowerPosition(x, y);
+        return position && !position.hasTower;
+    }
+    
+    /**
+     * Размещает башню
+     * @param {number} x - X координата
+     * @param {number} y - Y координата
+     */
+    placeTower(x, y) {
+        if (!this.selectedTowerType || !this.canPlaceTower(x, y)) {
+            return false;
+        }
+        
+        const success = towerManager.buildTower(x, y, this.selectedTowerType);
+        if (success) {
+            this.cancelTowerPlacement();
+            this.updateUI();
+        }
+        
+        return success;
+    }
 
 // Регистрируем контроллер экрана уровня
 document.addEventListener('DOMContentLoaded', () => {
