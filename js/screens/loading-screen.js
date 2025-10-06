@@ -86,7 +86,12 @@ class LoadingScreenController {
             // Имитируем дополнительное время загрузки для плавности
             await this.delay(500);
             
+            // Обновляем текст перед переходом
+            this.updateLoadingText('Загрузка завершена!');
+            await this.delay(300);
+            
             // Переходим к следующему экрану
+            console.log(`Transitioning to: ${nextScreen}`);
             await screenManager.switchTo(nextScreen);
             
         } catch (error) {

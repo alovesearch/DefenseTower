@@ -1,0 +1,142 @@
+{
+  "towers": [
+    {
+      "id": "archer_tower",
+      "name": "Башня лучников",
+      "type": "archer",
+      "cost": 50,
+      "sellPrice": 25,
+      "damage": 15,
+      "range": 120,
+      "attackSpeed": 1000,
+      "size": 25,
+      "color": "#8B4513",
+      "description": "Базовая башня дальнего боя",
+      "upgradeCost": 75,
+      "maxLevel": 3,
+      "icon": "🏹",
+      "projectile": {
+        "type": "arrow",
+        "speed": 300,
+        "damage": 15,
+        "color": "#8B4513"
+      }
+    },
+    {
+      "id": "cannon_tower",
+      "name": "Пушка",
+      "type": "cannon",
+      "cost": 100,
+      "sellPrice": 50,
+      "damage": 40,
+      "range": 100,
+      "attackSpeed": 2000,
+      "size": 30,
+      "color": "#696969",
+      "description": "Мощная башня с большим уроном",
+      "upgradeCost": 150,
+      "maxLevel": 3,
+      "icon": "💣",
+      "projectile": {
+        "type": "cannonball",
+        "speed": 200,
+        "damage": 40,
+        "color": "#696969",
+        "explosionRadius": 30
+      }
+    },
+    {
+      "id": "magic_tower",
+      "name": "Магическая башня",
+      "type": "magic",
+      "cost": 150,
+      "sellPrice": 75,
+      "damage": 25,
+      "range": 140,
+      "attackSpeed": 1500,
+      "size": 28,
+      "color": "#9370DB",
+      "description": "Башня с магическими атаками",
+      "upgradeCost": 200,
+      "maxLevel": 3,
+      "icon": "🔮",
+      "projectile": {
+        "type": "magic_bolt",
+        "speed": 400,
+        "damage": 25,
+        "color": "#9370DB",
+        "piercing": true
+      }
+    },
+    {
+      "id": "barracks",
+      "name": "Казармы",
+      "type": "barracks",
+      "cost": 200,
+      "sellPrice": 100,
+      "damage": 0,
+      "range": 0,
+      "attackSpeed": 0,
+      "size": 35,
+      "color": "#8B4513",
+      "description": "Производит юнитов для защиты",
+      "upgradeCost": 300,
+      "maxLevel": 2,
+      "icon": "🏰",
+      "units": {
+        "type": "soldier",
+        "health": 80,
+        "damage": 20,
+        "speed": 1.0,
+        "spawnRate": 3000,
+        "maxUnits": 3,
+        "size": 12,
+        "color": "#4169E1"
+      }
+    },
+    {
+      "id": "wall",
+      "name": "Стена",
+      "type": "wall",
+      "cost": 25,
+      "sellPrice": 12,
+      "damage": 0,
+      "range": 0,
+      "attackSpeed": 0,
+      "size": 20,
+      "color": "#A9A9A9",
+      "description": "Блокирует путь противникам",
+      "upgradeCost": 0,
+      "maxLevel": 1,
+      "icon": "🧱",
+      "blocksPath": true
+    }
+  ],
+  "towerTypes": {
+    "archer": {
+      "name": "Лучник",
+      "description": "Башни дальнего боя с быстрой атакой",
+      "upgradePath": ["archer_tower", "elite_archer_tower", "master_archer_tower"]
+    },
+    "cannon": {
+      "name": "Пушка",
+      "description": "Мощные башни с большим уроном",
+      "upgradePath": ["cannon_tower", "heavy_cannon_tower", "siege_cannon_tower"]
+    },
+    "magic": {
+      "name": "Магия",
+      "description": "Магические башни с особыми эффектами",
+      "upgradePath": ["magic_tower", "arcane_tower", "void_tower"]
+    },
+    "barracks": {
+      "name": "Казармы",
+      "description": "Производят юнитов для защиты",
+      "upgradePath": ["barracks", "elite_barracks"]
+    },
+    "wall": {
+      "name": "Стена",
+      "description": "Блокируют путь противникам",
+      "upgradePath": ["wall"]
+    }
+  }
+}

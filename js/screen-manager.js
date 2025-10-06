@@ -51,7 +51,9 @@ class ScreenManager {
      */
     async switchTo(screenId, data = {}, addToHistory = true) {
         if (this.isTransitioning) {
-            console.warn('Transition already in progress');
+            console.warn('Transition already in progress, queuing transition to:', screenId);
+            // Добавляем переход в очередь
+            setTimeout(() => this.switchTo(screenId, data, addToHistory), 100);
             return;
         }
         

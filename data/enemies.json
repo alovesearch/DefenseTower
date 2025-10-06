@@ -1,0 +1,150 @@
+{
+  "enemies": [
+    {
+      "id": "goblin",
+      "name": "Гоблин",
+      "type": "melee",
+      "health": 50,
+      "maxHealth": 50,
+      "armor": 0,
+      "speed": 1.5,
+      "damage": 10,
+      "coins": 5,
+      "experience": 2,
+      "size": 15,
+      "color": "#8B4513",
+      "description": "Слабый противник ближнего боя",
+      "abilities": [],
+      "respawnTime": 1000,
+      "icon": "👹"
+    },
+    {
+      "id": "orc",
+      "name": "Орк",
+      "type": "melee",
+      "health": 100,
+      "maxHealth": 100,
+      "armor": 5,
+      "speed": 1.2,
+      "damage": 20,
+      "coins": 10,
+      "experience": 5,
+      "size": 20,
+      "color": "#228B22",
+      "description": "Сильный противник ближнего боя",
+      "abilities": ["berserker"],
+      "respawnTime": 1500,
+      "icon": "👹"
+    },
+    {
+      "id": "skeleton_archer",
+      "name": "Скелет-лучник",
+      "type": "ranged",
+      "health": 75,
+      "maxHealth": 75,
+      "armor": 2,
+      "speed": 1.0,
+      "damage": 15,
+      "coins": 8,
+      "experience": 4,
+      "size": 18,
+      "color": "#F5F5DC",
+      "description": "Противник дальнего боя",
+      "abilities": ["ranged_attack"],
+      "respawnTime": 1200,
+      "icon": "💀"
+    },
+    {
+      "id": "dark_mage",
+      "name": "Темный маг",
+      "type": "caster",
+      "health": 60,
+      "maxHealth": 60,
+      "armor": 0,
+      "speed": 0.8,
+      "damage": 25,
+      "coins": 15,
+      "experience": 8,
+      "size": 16,
+      "color": "#4B0082",
+      "description": "Магический противник с заклинаниями",
+      "abilities": ["magic_bolt", "heal_self"],
+      "respawnTime": 2000,
+      "icon": "🧙‍♂️"
+    },
+    {
+      "id": "test_boss",
+      "name": "Босс для теста",
+      "type": "boss",
+      "health": 500,
+      "maxHealth": 500,
+      "armor": 20,
+      "speed": 0.5,
+      "damage": 50,
+      "coins": 100,
+      "experience": 50,
+      "size": 40,
+      "color": "#8B0000",
+      "description": "Мощный босс для тестирования",
+      "abilities": ["boss_roar", "area_damage", "regeneration"],
+      "respawnTime": 5000,
+      "icon": "👹",
+      "isBoss": true,
+      "cameraFocus": true
+    }
+  ],
+  "abilities": {
+    "berserker": {
+      "name": "Берсерк",
+      "description": "Увеличивает урон при низком здоровье",
+      "type": "passive",
+      "effect": "damage_multiplier",
+      "value": 2.0,
+      "condition": "health < 30%"
+    },
+    "ranged_attack": {
+      "name": "Дальняя атака",
+      "description": "Атакует на расстоянии",
+      "type": "active",
+      "range": 100,
+      "cooldown": 2000
+    },
+    "magic_bolt": {
+      "name": "Магическая стрела",
+      "description": "Магическая атака",
+      "type": "active",
+      "damage": 30,
+      "range": 80,
+      "cooldown": 3000
+    },
+    "heal_self": {
+      "name": "Исцеление",
+      "description": "Восстанавливает здоровье",
+      "type": "active",
+      "heal": 20,
+      "cooldown": 5000
+    },
+    "boss_roar": {
+      "name": "Рык босса",
+      "description": "Увеличивает урон всех противников",
+      "type": "active",
+      "area_effect": 200,
+      "damage_boost": 1.5,
+      "cooldown": 10000
+    },
+    "area_damage": {
+      "name": "Область урона",
+      "description": "Наносит урон в области",
+      "type": "active",
+      "damage": 40,
+      "area_radius": 60,
+      "cooldown": 8000
+    },
+    "regeneration": {
+      "name": "Регенерация",
+      "description": "Постепенно восстанавливает здоровье",
+      "type": "passive",
+      "heal_per_second": 2
+    }
+  }
+}

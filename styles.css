@@ -299,6 +299,39 @@ body {
     display: flex;
     gap: 15px;
     font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.wave-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.wave-title {
+    font-size: 14px;
+    color: #ecf0f1;
+}
+
+.start-wave-btn {
+    background: linear-gradient(45deg, #e74c3c, #f39c12);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.start-wave-btn:hover {
+    transform: scale(1.05);
+}
+
+.start-wave-btn:disabled {
+    background: #7f8c8d;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .level-controls {

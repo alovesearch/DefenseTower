@@ -8,6 +8,8 @@ class LevelScreenController {
         this.ctx = this.canvas.getContext('2d');
         this.pauseBtn = document.getElementById('pause-btn');
         this.speedBtn = document.getElementById('speed-btn');
+        this.startWaveBtn = document.getElementById('start-wave-btn');
+        this.waveTitle = document.querySelector('.wave-title');
         
         this.levelData = null;
         this.hero = null;
@@ -32,6 +34,7 @@ class LevelScreenController {
         console.log('Level screen loaded');
         this.levelData = data.levelData || this.getDefaultLevelData();
         this.initializeLevel();
+        this.setupSystems();
     }
     
     /**
@@ -84,6 +87,7 @@ class LevelScreenController {
         // Кнопки управления
         this.pauseBtn.addEventListener('click', () => this.togglePause());
         this.speedBtn.addEventListener('click', () => this.toggleSpeed());
+        this.startWaveBtn.addEventListener('click', () => this.startWave());
         
         // События мыши для управления героем
         this.canvas.addEventListener('click', (e) => this.onCanvasClick(e));
@@ -140,7 +144,11 @@ class LevelScreenController {
             targetX: this.levelData.heroStartPos.x,
             targetY: this.levelData.heroStartPos.y,
             isMoving: false,
-            speed: 2
+            speed: 2,
+            health: 100,
+            maxHealth: 100,
+            level: 1,
+            experience: 0
         };
         
         // Инициализируем дороги
@@ -152,7 +160,60 @@ class LevelScreenController {
         // Инициализируем препятствия
         this.obstacles = this.levelData.obstacles;
         
+        // Инициализируем волны
+        this.waves = this.levelData.waves || this.getDefaultWaves();
+        
         console.log('Level initialized');
+    }
+    
+    /**
+     * Настраивает системы
+     */
+    setupSystems() {
+        // Настраиваем менеджер волн
+        waveManager.setWaves(this.waves);
+        waveManager.setSpawnPoints([this.levelData.attackPoint]);
+        waveManager.onEnemyKilled = (enemy, killer) => this.onEnemyKilled(enemy, killer);
+        waveManager.onWaveComplete = (waveIndex) => this.onWaveComplete(waveIndex);
+        waveManager.onBossSpawned = (boss) => this.onBossSpawned(boss);
+        
+        // Настраиваем менеджер башен
+        towerManager.setTowerPositions(this.towerPositions);
+        towerManager.onTowerBuilt = (tower) => this.onTowerBuilt(tower);
+        towerManager.onTowerSold = (tower, price) => this.onTowerSold(tower, price);
+        
+        // Настраиваем экономику
+        economyManager.onCoinsChanged = (coins, change, source) => this.onCoinsChanged(coins, change, source);
+        economyManager.onExperienceChanged = (exp, change, source) => this.onExperienceChanged(exp, change, source);
+        economyManager.onLevelUp = (level, oldExp, newExp) => this.onLevelUp(level, oldExp, newExp);
+        
+        console.log('Systems setup completed');
+    }
+    
+    /**
+     * Получает волны по умолчанию
+     */
+    getDefaultWaves() {
+        return [
+            {
+                name: "Волна 1",
+                enemies: [
+                    { type: "goblin", count: 10, delay: 1000 }
+                ]
+            },
+            {
+                name: "Волна 2", 
+                enemies: [
+                    { type: "orc", count: 2, delay: 2000 }
+                ]
+            },
+            {
+                name: "Волна босса",
+                enemies: [
+                    { type: "test_boss", count: 1, delay: 0 }
+                ]
+            }
+        ];
     }
     
     /**
@@ -169,6 +230,23 @@ class LevelScreenController {
     toggleSpeed() {
         this.gameSpeed = this.gameSpeed === 1 ? 2 : 1;
         this.speedBtn.textContent = this.gameSpeed === 1 ? '⚡' : '⚡⚡';
+    }
+    
+    /**
+     * Начинает волну
+     */
+    async startWave() {
+        if (waveManager.isWaveActive()) {
+            console.log('Wave already active');
+            return;
+        }
+        
+        const success = await waveManager.startNextWave();
+        if (success) {
+            this.startWaveBtn.disabled = true;
+            this.startWaveBtn.textContent = 'Волна активна...';
+            this.updateWaveUI();
+        }
     }
     
     /**
@@ -205,6 +283,15 @@ class LevelScreenController {
     update() {
         // Обновляем героя
         this.updateHero();
+        
+        // Обновляем волны
+        waveManager.update();
+        
+        // Обновляем башни
+        towerManager.updateTowers(waveManager.getAllEnemies());
+        
+        // Обновляем противников
+        this.updateEnemies();
     }
     
     /**
@@ -250,6 +337,12 @@ class LevelScreenController {
         
         // Рендерим позиции башен
         this.renderTowerPositions();
+        
+        // Рендерим башни
+        this.renderTowers();
+        
+        // Рендерим противников
+        this.renderEnemies();
         
         // Рендерим доступные ходы
         this.renderAvailableMoves();
@@ -303,7 +396,7 @@ class LevelScreenController {
     renderTowerPositions() {
         this.ctx.fillStyle = '#e74c3c';
         this.towerPositions.forEach(pos => {
-            if (pos.available) {
+            if (pos.available && !pos.hasTower) {
                 this.ctx.beginPath();
                 this.ctx.arc(pos.x, pos.y, 15, 0, Math.PI * 2);
                 this.ctx.fill();
@@ -313,6 +406,141 @@ class LevelScreenController {
                 this.ctx.stroke();
             }
         });
+    }
+    
+    /**
+     * Рендерит башни
+     */
+    renderTowers() {
+        const towers = towerManager.getAllTowers();
+        towers.forEach(tower => {
+            this.renderTower(tower);
+        });
+    }
+    
+    /**
+     * Рендерит одну башню
+     * @param {Object} tower - Башня
+     */
+    renderTower(tower) {
+        // Рендерим основание башни
+        this.ctx.fillStyle = tower.color;
+        this.ctx.beginPath();
+        this.ctx.arc(tower.x, tower.y, tower.size, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Рендерим границу
+        this.ctx.strokeStyle = '#fff';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+        
+        // Рендерим иконку
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '16px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(tower.icon, tower.x, tower.y);
+        
+        // Рендерим уровень
+        this.ctx.fillStyle = '#000';
+        this.ctx.font = '12px Arial';
+        this.ctx.fillText(tower.level.toString(), tower.x, tower.y + 20);
+        
+        // Рендерим радиус атаки при наведении
+        if (this.isTowerHovered(tower)) {
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.arc(tower.x, tower.y, tower.range, 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
+    }
+    
+    /**
+     * Рендерит противников
+     */
+    renderEnemies() {
+        const enemies = waveManager.getAllEnemies();
+        enemies.forEach(enemy => {
+            if (!enemy.isDead) {
+                this.renderEnemy(enemy);
+            }
+        });
+    }
+    
+    /**
+     * Рендерит одного противника
+     * @param {Object} enemy - Противник
+     */
+    renderEnemy(enemy) {
+        // Рендерим тело противника
+        this.ctx.fillStyle = enemy.color;
+        this.ctx.beginPath();
+        this.ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Рендерим границу
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+        
+        // Рендерим иконку
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '14px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(enemy.icon, enemy.x, enemy.y);
+        
+        // Рендерим полоску здоровья
+        if (enemy.health < enemy.maxHealth) {
+            const barWidth = enemy.size * 2;
+            const barHeight = 4;
+            const barX = enemy.x - barWidth / 2;
+            const barY = enemy.y - enemy.size - 8;
+            
+            // Фон полоски
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // Здоровье
+            const healthPercent = enemy.health / enemy.maxHealth;
+            this.ctx.fillStyle = '#00ff00';
+            this.ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+        }
+        
+        // Рендерим облако текста для босса
+        if (enemy.isBoss) {
+            this.renderBossText(enemy);
+        }
+    }
+    
+    /**
+     * Рендерит текст босса
+     * @param {Object} boss - Босс
+     */
+    renderBossText(boss) {
+        const text = `${boss.name} - ${boss.health}/${boss.maxHealth}`;
+        const textWidth = this.ctx.measureText(text).width;
+        const textX = boss.x - textWidth / 2;
+        const textY = boss.y - boss.size - 20;
+        
+        // Фон облака
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillRect(textX - 5, textY - 15, textWidth + 10, 20);
+        
+        // Текст
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '12px Arial';
+        this.ctx.fillText(text, textX, textY);
+    }
+    
+    /**
+     * Проверяет, наведена ли мышь на башню
+     * @param {Object} tower - Башня
+     */
+    isTowerHovered(tower) {
+        // Простая проверка - можно улучшить
+        return false;
     }
     
     /**
@@ -612,6 +840,234 @@ class LevelScreenController {
         this.availableMoves = [];
         
         console.log(`Hero moving to (${x}, ${y})`);
+    }
+    
+    /**
+     * Обновляет противников
+     */
+    updateEnemies() {
+        const enemies = waveManager.getAllEnemies();
+        enemies.forEach(enemy => {
+            if (!enemy.isDead) {
+                this.updateEnemy(enemy);
+            }
+        });
+    }
+    
+    /**
+     * Обновляет одного противника
+     * @param {Object} enemy - Противник
+     */
+    updateEnemy(enemy) {
+        // Простое движение к точке защиты
+        const dx = this.levelData.defensePoint.x - enemy.x;
+        const dy = this.levelData.defensePoint.y - enemy.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 5) {
+            const moveDistance = enemy.speed;
+            enemy.x += (dx / distance) * moveDistance;
+            enemy.y += (dy / distance) * moveDistance;
+        } else {
+            // Противник достиг точки защиты
+            this.onEnemyReachedDefense(enemy);
+        }
+    }
+    
+    /**
+     * Обработчик убийства противника
+     * @param {Object} enemy - Противник
+     * @param {Object} killer - Кто убил
+     */
+    onEnemyKilled(enemy, killer) {
+        // Добавляем монеты
+        economyManager.addCoins(enemy.coins, `Kill ${enemy.name}`);
+        
+        // Если убил герой, добавляем опыт
+        if (killer && killer === this.hero) {
+            economyManager.addExperience(enemy.experience, `Kill ${enemy.name}`);
+        }
+        
+        console.log(`Enemy killed: ${enemy.name}, coins: +${enemy.coins}`);
+    }
+    
+    /**
+     * Обработчик завершения волны
+     * @param {number} waveIndex - Индекс волны
+     */
+    onWaveComplete(waveIndex) {
+        console.log(`Wave ${waveIndex + 1} completed`);
+        
+        // Добавляем бонусные монеты за завершение волны
+        const bonusCoins = 50 + (waveIndex + 1) * 25;
+        economyManager.addCoins(bonusCoins, `Wave ${waveIndex + 1} bonus`);
+        
+        // Обновляем UI
+        this.updateWaveUI();
+        
+        // Автоматически начинаем следующую волну через 3 секунды
+        setTimeout(() => {
+            waveManager.startNextWave();
+        }, 3000);
+    }
+    
+    /**
+     * Обработчик появления босса
+     * @param {Object} boss - Босс
+     */
+    onBossSpawned(boss) {
+        console.log(`Boss spawned: ${boss.name}`);
+        
+        // Фокусируем камеру на боссе
+        this.focusOnBoss(boss);
+    }
+    
+    /**
+     * Обработчик достижения противником точки защиты
+     * @param {Object} enemy - Противник
+     */
+    onEnemyReachedDefense(enemy) {
+        console.log(`Enemy reached defense: ${enemy.name}`);
+        
+        // Наносим урон герою
+        if (this.hero) {
+            this.hero.health -= enemy.damage;
+            console.log(`Hero takes ${enemy.damage} damage, health: ${this.hero.health}`);
+            
+            if (this.hero.health <= 0) {
+                this.gameOver();
+            }
+        }
+        
+        // Удаляем противника
+        waveManager.killEnemy(enemy);
+    }
+    
+    /**
+     * Обработчик постройки башни
+     * @param {Object} tower - Башня
+     */
+    onTowerBuilt(tower) {
+        console.log(`Tower built: ${tower.name}`);
+    }
+    
+    /**
+     * Обработчик продажи башни
+     * @param {Object} tower - Башня
+     * @param {number} price - Цена продажи
+     */
+    onTowerSold(tower, price) {
+        console.log(`Tower sold: ${tower.name} for ${price} coins`);
+    }
+    
+    /**
+     * Обработчик изменения монет
+     * @param {number} coins - Количество монет
+     * @param {number} change - Изменение
+     * @param {string} source - Источник
+     */
+    onCoinsChanged(coins, change, source) {
+        // Обновляем UI
+        this.updateUI();
+    }
+    
+    /**
+     * Обработчик изменения опыта
+     * @param {number} exp - Опыт
+     * @param {number} change - Изменение
+     * @param {string} source - Источник
+     */
+    onExperienceChanged(exp, change, source) {
+        // Обновляем UI
+        this.updateUI();
+    }
+    
+    /**
+     * Обработчик повышения уровня
+     * @param {number} level - Новый уровень
+     * @param {number} oldExp - Старый опыт
+     * @param {number} newExp - Новый опыт
+     */
+    onLevelUp(level, oldExp, newExp) {
+        console.log(`Hero leveled up to level ${level}`);
+        
+        // Улучшаем героя
+        if (this.hero) {
+            this.hero.level = level;
+            this.hero.maxHealth += 20;
+            this.hero.health = this.hero.maxHealth;
+        }
+        
+        // Обновляем UI
+        this.updateUI();
+    }
+    
+    /**
+     * Фокусирует камеру на боссе
+     * @param {Object} boss - Босс
+     */
+    focusOnBoss(boss) {
+        // Простая реализация - можно расширить
+        console.log(`Focusing camera on boss: ${boss.name}`);
+    }
+    
+    /**
+     * Обновляет UI
+     */
+    updateUI() {
+        // Обновляем информацию о герое
+        if (this.hero) {
+            const heroHealth = this.levelElement.querySelector('.hero-health');
+            const heroMana = this.levelElement.querySelector('.hero-mana');
+            const heroLevel = this.levelElement.querySelector('.hero-level');
+            
+            if (heroHealth) {
+                heroHealth.textContent = `❤️ ${this.hero.health}/${this.hero.maxHealth}`;
+            }
+            
+            if (heroMana) {
+                heroMana.textContent = `💙 ${economyManager.getCoins()}`;
+            }
+            
+            if (heroLevel) {
+                heroLevel.textContent = `⭐ ${this.hero.level}`;
+            }
+        }
+        
+        this.updateWaveUI();
+    }
+    
+    /**
+     * Обновляет UI волн
+     */
+    updateWaveUI() {
+        if (this.waveTitle) {
+            const currentWave = waveManager.getCurrentWave();
+            const maxWaves = waveManager.getMaxWaves();
+            this.waveTitle.textContent = `Волна: ${currentWave}/${maxWaves}`;
+        }
+        
+        // Обновляем кнопку начала волны
+        if (this.startWaveBtn) {
+            if (waveManager.isWaveActive()) {
+                this.startWaveBtn.disabled = true;
+                this.startWaveBtn.textContent = 'Волна активна...';
+            } else if (waveManager.getCurrentWave() >= waveManager.getMaxWaves()) {
+                this.startWaveBtn.disabled = true;
+                this.startWaveBtn.textContent = 'Все волны завершены';
+            } else {
+                this.startWaveBtn.disabled = false;
+                this.startWaveBtn.textContent = 'Начать волну';
+            }
+        }
+    }
+    
+    /**
+     * Конец игры
+     */
+    gameOver() {
+        console.log('Game Over');
+        // Здесь можно добавить экран поражения
     }
 }
 
