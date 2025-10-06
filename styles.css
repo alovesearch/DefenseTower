@@ -1,0 +1,51 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+#game-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+.main-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.start-text {
+  position: absolute;
+  bottom: 10%;
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  font-size: 2em;
+  cursor: pointer;
+}
+.sides-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+}
+.side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  color: white;
+  cursor: pointer;
+}
+.light { background: rgba(255,255,255,0.1); }
+.dark { background: rgba(0,0,0,0.4); }
+.confirm {
+  display: block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: gold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}

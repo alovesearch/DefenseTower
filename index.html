@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <title>Defense Tower PWA</title>
+
+  <!-- Иконки для PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/img/icon-192.png">
+  <link rel="apple-touch-icon" href="/img/icon-512.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+      width: 100vw;
+      height: 100vh;
+      font-family: 'Roboto', sans-serif;
+      touch-action: none;
+    }
+
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Сообщение при вертикальной ориентации */
+    #rotate-warning {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-size: 1.5em;
+      z-index: 9999;
+      padding: 20px;
+    }
+
+    #rotate-warning img {
+      width: 80px;
+      margin-bottom: 20px;
+      animation: rotate 2s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Контейнер, в который рендерятся все "экраны" -->
+  <div id="game-container"></div>
+
+  <!-- Сообщение о необходимости перевернуть экран -->
+  <div id="rotate-warning" style="display: none;">
+    <img src="/img/rotate.png" alt="rotate device">
+    <div>Пожалуйста, поверните устройство<br>в горизонтальное положение 📱➡️</div>
+  </div>
+
+  <!-- Основной модуль игры -->
+  <script type="module" src="js/main.js"></script>
+
+  <script>
+    // 🔄 Проверка ориентации экрана
+    function checkOrientation() {
+      const warning = document.getElementById('rotate-warning');
+      const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+
+      if (isPortrait) {
+        warning.style.display = 'flex';
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+
+    // Проверяем при загрузке и повороте
+    window.addEventListener('load', checkOrientation);
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+  </script>
+</body>
+</html>
