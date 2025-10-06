@@ -48,11 +48,8 @@ export class MainMenuScreen extends BaseScreen {
       btn.style.cssText = `
         display:block;margin-top:20px;padding:10px 20px;
         background:gold;border:none;border-radius:10px;cursor:pointer;
-        font-size:1.2em;
-      `;
-      side.appendChild(btn);
-      btn.onclick = () =>
-        this.manager.show(MapScreen, { faction: side.classList.contains("light") ? "light" : "dark" });
+        font-      btn.onclick = () =>
+        this.manager.switchTo("map-screen", { faction: side.classList.contains("light") ? "light" : "dark" });ide.classList.contains("light") ? "light" : "dark" });
     }
   }
 
