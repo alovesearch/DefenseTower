@@ -1,51 +1,430 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-  margin: 0;
-  overflow: hidden;
-  background: #000;
+    font-family: 'Arial', sans-serif;
+    background: #1a1a1a;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
-#game-container {
-  width: 100vw;
-  height: 100vh;
-  position: relative;
-  overflow: hidden;
+
+#app {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
 }
-.main-bg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #2c3e50;
+    cursor: crosshair;
 }
-.start-text {
-  position: absolute;
-  bottom: 10%;
-  width: 100%;
-  text-align: center;
-  color: #fff;
-  font-size: 2em;
-  cursor: pointer;
+
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
 }
-.sides-overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  display: flex;
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    pointer-events: all;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-.side {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2em;
-  color: white;
-  cursor: pointer;
+
+.screen.active {
+    opacity: 1;
+    visibility: visible;
 }
-.light { background: rgba(255,255,255,0.1); }
-.dark { background: rgba(0,0,0,0.4); }
-.confirm {
-  display: block;
-  margin-top: 20px;
-  padding: 10px 20px;
-  background: gold;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
+
+/* Loading Screen */
+#loading-screen {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+}
+
+.loading-content {
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #3498db;
+    border-top: 4px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 18px;
+    color: #ecf0f1;
+}
+
+/* Main Menu */
+#main-menu {
+    background: linear-gradient(135deg, #1a1a1a, #2c3e50);
+}
+
+.menu-content {
+    text-align: center;
+    max-width: 90%;
+}
+
+.logo-section .logo {
+    font-size: 48px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    background: linear-gradient(45deg, #e74c3c, #f39c12);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.start-hint {
+    font-size: 18px;
+    color: #bdc3c7;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.start-hint:hover {
+    color: #3498db;
+}
+
+.faction-selection {
+    margin-top: 40px;
+}
+
+.faction-image {
+    display: flex;
+    width: 100%;
+    max-width: 800px;
+    height: 400px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.faction-side {
+    flex: 1;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.light-side {
+    background: linear-gradient(135deg, #74b9ff, #0984e3);
+}
+
+.dark-side {
+    background: linear-gradient(135deg, #6c5ce7, #2d3436);
+}
+
+.faction-side:hover {
+    transform: scale(1.02);
+}
+
+.faction-side.selected {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+}
+
+.faction-side.dimmed {
+    filter: brightness(0.3);
+}
+
+.faction-label {
+    font-size: 32px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    margin-bottom: 20px;
+}
+
+.faction-lore {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.confirm-button {
+    margin-top: 30px;
+}
+
+.confirm-button button {
+    background: linear-gradient(45deg, #e74c3c, #f39c12);
+    border: none;
+    color: white;
+    padding: 15px 40px;
+    font-size: 18px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.confirm-button button:hover {
+    transform: scale(1.05);
+}
+
+/* Map Screen */
+#map-screen {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+}
+
+.map-ui {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: all;
+}
+
+.settings-button {
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #3498db;
+    color: #3498db;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.settings-button:hover {
+    background: #3498db;
+    color: white;
+}
+
+.map-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.faction-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.faction-indicator.light {
+    background: #74b9ff;
+}
+
+.faction-indicator.dark {
+    background: #6c5ce7;
+}
+
+.map-title {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* Level Screen */
+#level-screen {
+    background: transparent;
+}
+
+.level-ui {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: all;
+}
+
+.level-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.level-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ecf0f1;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.hero-info {
+    display: flex;
+    gap: 15px;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.wave-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.wave-title {
+    font-size: 14px;
+    color: #ecf0f1;
+}
+
+.start-wave-btn {
+    background: linear-gradient(45deg, #e74c3c, #f39c12);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.start-wave-btn:hover {
+    transform: scale(1.05);
+}
+
+.start-wave-btn:disabled {
+    background: #7f8c8d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.level-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.level-controls button {
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #3498db;
+    color: #3498db;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.level-controls button:hover {
+    background: #3498db;
+    color: white;
+}
+
+/* Settings Screen */
+#settings-screen {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.settings-content {
+    text-align: center;
+    max-width: 400px;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.settings-content h2 {
+    margin-bottom: 30px;
+    font-size: 28px;
+}
+
+.settings-content button {
+    background: linear-gradient(45deg, #e74c3c, #f39c12);
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    width: 100%;
+}
+
+.settings-content button:hover {
+    transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .logo-section .logo {
+        font-size: 36px;
+    }
+    
+    .faction-image {
+        height: 300px;
+    }
+    
+    .faction-label {
+        font-size: 24px;
+    }
+    
+    .faction-lore {
+        font-size: 12px;
+        padding: 10px;
+    }
+}
+
+/* Landscape orientation lock */
+@media (orientation: portrait) {
+    body::before {
+        content: "Поверните устройство в горизонтальное положение";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #1a1a1a;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        z-index: 9999;
+    }
 }

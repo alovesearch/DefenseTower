@@ -1,0 +1,44 @@
+{
+    "game": {
+        "name": "Tower Defense PWA",
+        "version": "1.0.0",
+        "orientation": "landscape",
+        "factions": {
+            "light": {
+                "name": "Свет",
+                "color": "#74b9ff",
+                "description": "Силы света защищают мир от тьмы"
+            },
+            "dark": {
+                "name": "Тьма",
+                "color": "#6c5ce7",
+                "description": "Силы тьмы стремятся поглотить мир"
+            }
+        }
+    },
+    "graphics": {
+        "canvas": {
+            "width": 1200,
+            "height": 800,
+            "background": "#2c3e50"
+        },
+        "hero": {
+            "size": 20,
+            "color": "#00ff00",
+            "speed": 2
+        },
+        "roads": {
+            "color": "#95a5a6",
+            "width": 8,
+            "dashPattern": [10, 5]
+        }
+    },
+    "levels": {
+        "1": {
+            "name": "Первый уровень",
+            "description": "Изучите основы управления героем",
+            "unlocked": true,
+            "completed": false
+        }
+    }
+}
