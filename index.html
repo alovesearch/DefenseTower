@@ -76,6 +76,58 @@
                     <div class="level-controls">
                         <button id="pause-btn">⏸️</button>
                         <button id="speed-btn">⚡</button>
+                        <button id="settings-btn-level">⚙️</button>
+                        <button id="back-to-map-btn">🗺️</button>
+                    </div>
+                </div>
+                
+                <!-- Панель башен -->
+                <div class="tower-panel" id="tower-panel">
+                    <div class="tower-panel-header">
+                        <h3>Башни</h3>
+                        <button id="close-tower-panel">✕</button>
+                    </div>
+                    <div class="tower-list">
+                        <div class="tower-item" data-tower="archer_tower">
+                            <div class="tower-icon">🏹</div>
+                            <div class="tower-info">
+                                <div class="tower-name">Башня лучников</div>
+                                <div class="tower-cost">💰 50</div>
+                            </div>
+                        </div>
+                        <div class="tower-item" data-tower="cannon_tower">
+                            <div class="tower-icon">💣</div>
+                            <div class="tower-info">
+                                <div class="tower-name">Пушка</div>
+                                <div class="tower-cost">💰 100</div>
+                            </div>
+                        </div>
+                        <div class="tower-item" data-tower="magic_tower">
+                            <div class="tower-icon">🔮</div>
+                            <div class="tower-info">
+                                <div class="tower-name">Магическая башня</div>
+                                <div class="tower-cost">💰 150</div>
+                            </div>
+                        </div>
+                        <div class="tower-item" data-tower="wall">
+                            <div class="tower-icon">🧱</div>
+                            <div class="tower-info">
+                                <div class="tower-name">Стена</div>
+                                <div class="tower-cost">💰 25</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Информационная панель -->
+                <div class="info-panel">
+                    <div class="economy-info">
+                        <div class="coins">💰 <span id="coins-display">100</span></div>
+                        <div class="experience">⭐ <span id="exp-display">0</span></div>
+                    </div>
+                    <div class="enemy-count">
+                        <div class="enemy-icon">👹</div>
+                        <div class="enemy-count-text">Врагов: <span id="enemy-count">0</span></div>
                     </div>
                 </div>
             </div>

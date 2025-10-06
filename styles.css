@@ -280,12 +280,17 @@ body {
     justify-content: space-between;
     align-items: flex-start;
     pointer-events: all;
+    z-index: 100;
 }
 
 .level-info {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
 }
 
 .level-title {
@@ -337,6 +342,10 @@ body {
 .level-controls {
     display: flex;
     gap: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
 }
 
 .level-controls button {
@@ -355,9 +364,167 @@ body {
     color: white;
 }
 
+/* Tower Panel */
+.tower-panel {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+    width: 250px;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 15px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    border: 2px solid #3498db;
+    pointer-events: all;
+    z-index: 200;
+    display: none;
+}
+
+.tower-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.tower-panel-header h3 {
+    color: #3498db;
+    margin: 0;
+}
+
+.tower-panel-header button {
+    background: #e74c3c;
+    border: none;
+    color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.tower-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tower-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.tower-item:hover {
+    background: rgba(52, 152, 219, 0.2);
+    border-color: #3498db;
+    transform: scale(1.02);
+}
+
+.tower-item.selected {
+    background: rgba(52, 152, 219, 0.3);
+    border-color: #3498db;
+}
+
+.tower-icon {
+    font-size: 24px;
+}
+
+.tower-info {
+    flex: 1;
+}
+
+.tower-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ecf0f1;
+}
+
+.tower-cost {
+    font-size: 12px;
+    color: #f39c12;
+}
+
+/* Info Panel */
+.info-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    pointer-events: all;
+    z-index: 100;
+}
+
+.economy-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.coins, .experience {
+    font-size: 16px;
+    font-weight: bold;
+    color: #f39c12;
+}
+
+.enemy-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #e74c3c;
+}
+
+.enemy-icon {
+    font-size: 18px;
+}
+
+.enemy-count-text {
+    font-weight: bold;
+}
+
+/* Tower placement indicator */
+.tower-placement-indicator {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 2px dashed #3498db;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 150;
+    display: none;
+}
+
+.tower-placement-indicator.valid {
+    border-color: #27ae60;
+    background: rgba(39, 174, 96, 0.2);
+}
+
+.tower-placement-indicator.invalid {
+    border-color: #e74c3c;
+    background: rgba(231, 76, 60, 0.2);
+}
+
 /* Settings Screen */
 #settings-screen {
     background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+}
+
+#settings-screen.modal {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
 }
 
 .settings-content {
