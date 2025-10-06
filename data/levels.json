@@ -1,0 +1,32 @@
+{
+    "levels": [
+        {
+            "id": 1,
+            "name": "Первый уровень",
+            "description": "Изучите основы управления героем",
+            "width": 1200,
+            "height": 800,
+            "heroStartPos": { "x": 100, "y": 400 },
+            "attackPoint": { "x": 1100, "y": 400 },
+            "defensePoint": { "x": 50, "y": 400 },
+            "roads": [
+                { "start": { "x": 1100, "y": 400 }, "end": { "x": 1000, "y": 400 } },
+                { "start": { "x": 1000, "y": 400 }, "end": { "x": 800, "y": 300 } },
+                { "start": { "x": 800, "y": 300 }, "end": { "x": 600, "y": 400 } },
+                { "start": { "x": 600, "y": 400 }, "end": { "x": 400, "y": 500 } },
+                { "start": { "x": 400, "y": 500 }, "end": { "x": 200, "y": 400 } },
+                { "start": { "x": 200, "y": 400 }, "end": { "x": 50, "y": 400 } }
+            ],
+            "towerPositions": [
+                { "x": 900, "y": 350, "available": true },
+                { "x": 700, "y": 250, "available": true },
+                { "x": 500, "y": 350, "available": true },
+                { "x": 300, "y": 450, "available": true }
+            ],
+            "obstacles": [
+                { "x": 500, "y": 200, "width": 100, "height": 100 },
+                { "x": 300, "y": 600, "width": 80, "height": 80 }
+            ]
+        }
+    ]
+}
